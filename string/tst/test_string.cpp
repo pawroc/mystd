@@ -1,42 +1,78 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <string.hpp>
+#include <cstring>
 
-class Interface
+namespace
 {
-public:
-    virtual ~Interface() = default;
+constexpr const char* smallString = "123456789012345";
+constexpr size_t smallStringSize = strlen(smallString);
 
-    int fuu(int i, float f)
-    {
-        return boo(f) + foo(i) * 2;
-    }
+constexpr const char* bigString = "1234567890123456";
+constexpr size_t bigStringSize = strlen(bigString);
+} // anonymous namespace
 
-private:
-    virtual int boo(float) const = 0;
-    virtual int foo(int) = 0;
+struct TestDefaultConstructedString : public ::testing::Test
+{
+    mystd::string str;
+    std::string std_str;
 };
 
-class InterfaceMock : public Interface
+TEST_F(TestDefaultConstructedString, when_created__should_create_empty_string_of_size_zero)
 {
-public:
-    MOCK_METHOD(int, foo, (int));
-    MOCK_METHOD(int, boo, (float), (const));
-};
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_EQ(str.capacity(), 15);
+    EXPECT_STREQ(str.c_str(), "");
 
-TEST(Test1, should_fail)
-{
-    EXPECT_TRUE(false);
+    EXPECT_EQ(std_str.size(), 0);
+    EXPECT_EQ(std_str.capacity(), 15);
+    EXPECT_STREQ(std_str.c_str(), "");
 }
 
-using ::testing::Return;
-using ::testing::_;
-
-TEST(Test2, fuu_should_pass)
+TEST_F(TestDefaultConstructedString, when_small_string_assigned__size_and_capa_should_be_updated)
 {
-    InterfaceMock mock;
+    str = smallString;
+    EXPECT_EQ(str.size(), smallStringSize);
+    EXPECT_EQ(str.capacity(), smallStringSize);
+    EXPECT_STREQ(str.c_str(), smallString);
 
-    EXPECT_CALL(mock, boo(5.0)).WillOnce(Return(10));
-    EXPECT_CALL(mock, foo(_)).WillOnce(Return(2));
+    std_str = smallString;
+    EXPECT_EQ(std_str.size(), smallStringSize);
+    EXPECT_EQ(std_str.capacity(), smallStringSize);
+    EXPECT_STREQ(std_str.c_str(), smallString);
+}
 
-    EXPECT_EQ(mock.fuu(1, 5.0), 14);
+TEST_F(TestDefaultConstructedString, when_nullptr_assigned__should_not_change_object)
+{
+    str = nullptr;
+    EXPECT_EQ(str.size(), 0);
+    EXPECT_EQ(str.capacity(), 15);
+    EXPECT_STREQ(str.c_str(), "");
+
+    // SegFault raised
+//    std_str = nullptr;
+//    EXPECT_EQ(std_str.size(), 0);
+//    EXPECT_EQ(std_str.capacity(), 15);
+//    EXPECT_STREQ(std_str.c_str(), "");
+}
+
+TEST_F(TestDefaultConstructedString, when_big_string_assigned__memory_should_be_allocated)
+{
+    str = bigString;
+    EXPECT_EQ(str.size(), bigStringSize);
+    EXPECT_EQ(str.capacity(), smallStringSize * 2);
+    EXPECT_STREQ(str.c_str(), bigString);
+
+    std_str = bigString;
+    EXPECT_EQ(std_str.size(), bigStringSize);
+    EXPECT_EQ(std_str.capacity(), smallStringSize * 2);
+    EXPECT_STREQ(std_str.c_str(), bigString);
+}
+
+TEST_F(TestDefaultConstructedString, when_dynamic_allocation_done__memory_should_be_released_when_string_is_deleted)
+{
+}
+
+TEST_F(TestDefaultConstructedString, when_big_string_assigned_and_then_small_string_assigned__size_and_capacity_should_be_updated)
+{
 }
