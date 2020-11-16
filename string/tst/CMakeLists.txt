@@ -5,6 +5,7 @@ set(SOURCES test_string.cpp)
 
 add_executable(${TEST_EXECUTABLE_NAME} ${SOURCES})
 target_link_libraries(${TEST_EXECUTABLE_NAME} gtest gmock gtest_main gmock_main ${PROJECT_NAME})
+target_include_directories(${TEST_EXECUTABLE_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_test(NAME "${TEST_EXECUTABLE_NAME}"
          COMMAND ${TEST_EXECUTABLE_NAME})

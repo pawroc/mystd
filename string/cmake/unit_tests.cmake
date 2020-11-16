@@ -1,4 +1,4 @@
-if(BUILD_UT STREQUAL "ON")
+if(BUILD_TESTING)
     include(CTest)
 
     if (CMAKE_VERSION VERSION_LESS 3.2)

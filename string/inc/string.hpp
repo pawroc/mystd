@@ -1,9 +1,13 @@
 #pragma once
 
 #include <cstring>
+#include <cstdint>
+#include <memory>
 
 namespace mystd
 {
+
+template<class Allocator = std::allocator<char>>
 class string final
 {
     static constexpr std::uint8_t smallStringSize{15};
@@ -29,51 +33,88 @@ private:
         char buf[smallStringSize + 1]; // 15 chars + NULL sign
     };
     char* ptr;
+    Allocator alloc;
 };
 
-constexpr string::string() : sz{0}, buf{0}, ptr{buf}
+template<class Allocator>
+constexpr string<Allocator>::string() : sz{0}, buf{0}, ptr{buf}, alloc{}
 {
 }
 
-string::~string()
+template<class Allocator>
+string<Allocator>::~string()
 {
     if (ptr != buf)
     {
-        delete[] ptr;
+        alloc.deallocate(ptr, space + 1);
     };
 }
 
-size_t string::size() const noexcept
+template<class Allocator>
+size_t string<Allocator>::size() const noexcept
 {
     return sz;
 }
 
-size_t string::capacity() const noexcept
+template<class Allocator>
+size_t string<Allocator>::capacity() const noexcept
 {
     return ptr == buf ? smallStringSize : sz + space;
 }
 
-const char* string::c_str() const noexcept
+template<class Allocator>
+const char* string<Allocator>::c_str() const noexcept
 {
     return ptr;
 }
 
-void string::assign(const char* str)
+template<class Allocator>
+void string<Allocator>::assign(const char* str)
 {
     if (not str) return;
 
-    sz = strlen(str);
-    if (strlen(str) > smallStringSize)
+    auto newSz = strlen(str);
+    if (newSz > capacity())
     {
-//        allocate(strlen(str));
-        ptr = new char[strlen(str) + 1];
-        space = 2 * smallStringSize - sz;
+        char* p = nullptr;
+        if (ptr == buf)
+        {
+            space = 0;
+            p = alloc.allocate(newSz + 1);
+        }
+        else
+        {
+            space = 2 * capacity() - newSz;
+            p = alloc.allocate(capacity() + 1);
+        }
+
+        if (p)
+        {
+            ptr = p;
+        }
     }
-    memcpy(ptr, str, strlen(str));
-    ptr[strlen(str)] = 0;
+    else
+    {
+        if (ptr != buf)
+        {
+            if (newSz < sz)
+            {
+                space += sz - newSz;
+            }
+            else if(newSz > sz)
+            {
+                space -= newSz - sz;
+            }
+        }
+    }
+
+    memcpy(ptr, str, newSz);
+    sz = newSz;
+    ptr[newSz] = 0;
 }
 
-string& string::operator=(const char* newString)
+template<class Allocator>
+string<Allocator>& string<Allocator>::operator=(const char* newString)
 {
     assign(newString);
     return *this;
